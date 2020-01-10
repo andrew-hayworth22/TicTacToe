@@ -85,7 +85,7 @@ bool stop() {
 }
 
 void print() {
-    std::cout "Player One(X) | Player Two(O)" << std::endl;
+    std::cout << "Player One(X) | Player Two(O)" << std::endl;
     std::cout << "   |   |   " << std::endl;
     std::cout << " " << board[0] << " | " << board[1] << " | " << board[2] << std::endl;
     std::cout << "___|___|___" << std::endl;
