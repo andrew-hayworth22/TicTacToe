@@ -18,7 +18,7 @@ struct Board {
 
 void initBoard(struct Board*, char, char);
 void drawBoard(struct Board*);
-int takeTurn(struct Board*, int, int, int);
-int checkVictory(struct Board*);
+int takeTurn(struct Board*, int, int);
+int checkVictory(struct Board*, int);
 
 #endif

@@ -28,29 +28,37 @@
 void setUp();
 void drawPrompt();
 void makeMove(char);
+void drawPrompt();
 void refreshScreen();
-void victory();
+void gameOver();
 void quit();
 
 // Game variables
 struct Board board;
 int isP1Turn = 1;
 char* prompt = "Player 1's Turn: ";
+int isOver = 0;
 
 ///////////////////////////////////////////////////////////////////////
 // main() -> main logic flow of the game
 ///////////////////////////////////////////////////////////////////////
 int main(int argc, char* argv[]) {
-
+    // Set up game
     setUp();
-    drawBoard(&board);
+    // Draw initial screen
+    refreshScreen();
 
+    // Get input, make a move on that input, and refresh screen
     int c;
     while((c = getchar()) != QUIT_CHAR) {
         makeMove(c);
         refreshScreen();
+
+        if(isOver)
+            gameOver();
     }
 
+    // Gracefully quit if exit character is given
     quit();
 }
 
@@ -73,90 +81,64 @@ void setUp() {
 // makeMove() -> player attempts a move
 ///////////////////////////////////////////////////////////////////////
 void makeMove(char in) {
-    switch (in) {
-            case '1':
-                if(!takeTurn(&board, 0, 0, isP1Turn)) {
-                    prompt = "Spot is taken: ";
-                }
-                else {
-                    victory(board);
-                }
-                break;
-            case '2':
-                if(!takeTurn(&board, 0, 1, isP1Turn)) {
-                    prompt = "Spot is taken: ";
-                }
-                else {
-                    victory(board);
-                }
-                break;
-            case '3':
-                if(!takeTurn(&board, 0, 2, isP1Turn)) {
-                    prompt = "Spot is taken: ";
-                }
-                else {
-                    victory(board);
-                }
-                break;
-            case '4':
-                if(!takeTurn(&board, 1, 0, isP1Turn)) {
-                    prompt = "Spot is taken: ";
-                }
-                else {
-                    victory(board);
-                }
-                break;
-            case '5':
-                if(!takeTurn(&board, 1, 1, isP1Turn)) {
-                    prompt = "Spot is taken: ";
-                }
-                else {
-                    victory(board);
-                }
-                break;
-            case '6':
-                if(!takeTurn(&board, 1, 2, isP1Turn)) {
-                    prompt = "Spot is taken: ";
-                }
-                else {
-                    victory(board);
-                }
-                break;
-            case '7':
-                if(!takeTurn(&board, 2, 0, isP1Turn)) {
-                    prompt = "Spot is taken: ";
-                }
-                else {
-                    victory(board);
-                }
-                break;
-            case '8':
-                if(!takeTurn(&board, 2, 1, isP1Turn)) {
-                    prompt = "Spot is taken: ";
-                }
-                else {
-                    victory(board);
-                }
-                break;
-            case '9':
-                if(!takeTurn(&board, 2, 2, isP1Turn)) {
-                    prompt = "Spot is taken: ";
-                }
-                else {
-                    victory(board);
-                }
-                break;
-            default:
-                prompt = "Incorrect input: ";
-                break;
+    // Get number of input
+    int inNum = in - '0';
+
+    // Ensure that the input is a valid spot
+    if(inNum < 10 && inNum > 0) {
+        // Attempt to take a turn
+        if(takeTurn(&board, inNum, isP1Turn) == 1) {
+            // Check victory
+            int res = checkVictory(&board, isP1Turn);
+            if(res == 1) {
+                isOver = 1;
+                prompt = (isP1Turn) ? "Player 1 wins!" : "Player 2 wins!";
+            }
+            else if(res == -1) {
+                isOver = 1;
+                prompt = "Tie game!";
+            }
+                
+
+            // Switch turns and change prompts
+            if(isOver != 1) {
+                isP1Turn = !isP1Turn;
+                if(isP1Turn)
+                    prompt = "Player 1's turn: ";
+                else
+                    prompt = "Player 2's turn: ";
+            }
+            
         }
+    }
+}
+
+///////////////////////////////////////////////////////////////////////
+// drawPrompt() -> draws game prompt at correct position
+///////////////////////////////////////////////////////////////////////
+void drawPrompt() {
+    // Move to the corrects position, add the prompt string, and refresh
+    move(15, 5);
+    addstr(prompt);
+    refresh();
 }
 
 ///////////////////////////////////////////////////////////////////////
 // refreshScreen() -> refresh screen
 ///////////////////////////////////////////////////////////////////////
 void refreshScreen() {
+    // Draw the board and the prompt
+    drawBoard(&board);
+    drawPrompt();
+}
 
+///////////////////////////////////////////////////////////////////////
+// gameOver() -> game over screen
+///////////////////////////////////////////////////////////////////////
+void gameOver() {
+    clear();
+    drawPrompt();
+    refresh();
 }
 
 ///////////////////////////////////////////////////////////////////////
