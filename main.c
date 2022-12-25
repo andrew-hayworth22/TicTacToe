@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #include <signal.h>
 #include "board.h"
+#include "server.h"
 
 ///////////////////////////////////////////////////////////////////////
 // Definitions
@@ -32,34 +33,96 @@ void drawPrompt();
 void refreshScreen();
 void gameOver();
 void quit();
+void oops(const char*);
 
 // Game variables
 struct Board board;
+int isP1 = 0;
 int isP1Turn = 1;
 char* prompt = "Player 1's Turn: ";
 int isOver = 0;
+
+// Server variable
+int server_sock;
 
 ///////////////////////////////////////////////////////////////////////
 // main() -> main logic flow of the game
 ///////////////////////////////////////////////////////////////////////
 int main(int argc, char* argv[]) {
+    // Determine if it is in server mode
+    if(argc == 2)
+        isP1 = 1;
+    else if(argc != 3)
+        oops("Invalid input");
+
+    // If it's a server, set up the server
+    if(isP1 == 1) {
+        int sock_fd;
+
+        // Create the socket
+        if((server_sock = make_server_socket(atoi(argv[1]))) == -1)
+            oops("Error starting server");
+
+        // Wait for a call
+        printf("Awaiting connection...\n");
+        sock_fd = accept(server_sock, NULL, NULL);
+        //Verify connection
+        if(sock_fd == -1)
+            oops("Error connecting");
+        printf("Player successfully connected\n");
+    }
+
+    // If it's a client, connect to the server
+    else {
+        if(SCconnect(argv[1], atoi(argv[2])) == -1)
+            oops("Failed to connect to server");
+    }
+
     // Set up game
     setUp();
     // Draw initial screen
     refreshScreen();
 
     // Get input, make a move on that input, and refresh screen
+    char buf[MAXMSG];
     int c;
-    while((c = getchar()) != QUIT_CHAR) {
-        makeMove(c);
+    while(1) {
+        if(isP1 && !isP1Turn) {
+            if(read(server_sock, buf, 1) < 0)
+                oops("Error reading stream");
+            
+            makeMove(atoi(buf[0]));
+            strcpy(buf, "");
+        }
+        else if(!isP1 && isP1Turn) {
+            if(SCgetstr(buf, 1) == -1)
+                oops("Error reading from server");
+            makeMove(atoi(buf[0]));
+            strcpy(buf, "");
+        }
         refreshScreen();
 
         if(isOver)
             gameOver();
-    }
 
-    // Gracefully quit if exit character is given
-    quit();
+        while((c = getchar()) != QUIT_CHAR) {
+            buf[0] = c;
+            if(isP1)
+                write(server_sock, buf, 1);
+            else
+                SCtell_server(buf);
+            
+            makeMove(c);
+            refreshScreen();
+
+            if(isOver)
+                gameOver();
+        }
+
+        // Gracefully quit if exit character is given
+        quit();
+    }
+    
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -147,4 +210,9 @@ void gameOver() {
 void quit() {
     endwin();
     exit(0);
+}
+
+void oops(const char* str) {
+    perror(str);
+    exit(1);
 }

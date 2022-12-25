@@ -6,8 +6,11 @@
 # Eases the compilation of the program
 ###################################################################
 
-tictactoe: main.c board.c
-	cc main.c board.c -lcurses -o tictactoe -Wall
+tictactoe: main.c board.c server.h
+	cc main.c board.c server.c -lcurses -o tictactoe -Wall
+
+test:
+	cc test.c server.c -o test -Wall
 
 clean:
-	rm -f tictactoe
+	rm -f tictactoe test
